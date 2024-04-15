@@ -68,13 +68,19 @@ def add_args(parser):
     parser.add_argument('--server_lr', type=float, default=1, help='servers learning rate for signSGD')
     parser.add_argument('--dense_ratio', type=float, default=0.25,
                         help="num of workers for multithreading")
-    parser.add_argument('--method', type=str, default="TopKnoPer",
+    parser.add_argument('--method', type=str, default="TopK",
                         help="TopKnoPer, TopK")
-    parser.add_argument('--theta', type=int, default=0.5,
+    parser.add_argument('--theta', type=int, default=0.55,
                         help="the ratio of partition")
     parser.add_argument('--topk', type=int, default=0.6,
                         help="the ratio of topk")
     parser.add_argument('--cease_poison', type=float, default=100000)
+
+    parser.add_argument('--loss_distribution', action='store_true', default=False)
+    parser.add_argument('--grad_cam', action='store_true', default=False)
+    parser.add_argument('--loss_round', action='store_true', default=False)
+    parser.add_argument('--coordinate_similarity', action='store_true', default=False)
+    parser.add_argument('--neuron_activation', action='store_true', default=False)
 
     return parser
 
@@ -97,6 +103,9 @@ def load_data(args):
         user_groups = distribute_data(train_dataset, args, n_classes=num_target)
 
     idxs = (val_dataset.targets != args.target_class).nonzero().flatten().tolist()
+    poisoned_clean_val_loader = DataLoader(DatasetSplit(copy.deepcopy(val_dataset), idxs), batch_size=args.batch_size, shuffle=False,
+                                     num_workers=args.num_workers,
+                                     pin_memory=False)
     if args.dataset != "tinyimagenet":
         # poison the validation dataset
         poisoned_val_set = DatasetSplit(copy.deepcopy(val_dataset), idxs)
@@ -120,7 +129,7 @@ def load_data(args):
                                             num_workers=args.num_workers,
                                             pin_memory=False)
 
-    return train_dataset, poisoned_val_loader, poisoned_val_only_x_loader, user_groups, val_loader
+    return train_dataset, poisoned_val_loader, poisoned_val_only_x_loader, user_groups, val_loader, poisoned_clean_val_loader
 
 
 def custom_model_trainer(args, model, logger):

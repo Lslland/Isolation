@@ -30,42 +30,13 @@ class Aggregation():
         for client_idx in client_indexes:
             spe_params = self.get_params_based_mask(specific_mask[client_idx], client_params_dict[client_idx])
             for name, params in common_params.items():
-                if self.args.method == 'TopKnoPer':
+                if self.args.method == 'TopKnoPer' and round_idx>99:
                     specific_params[client_idx][name] = common_params[name]
                 else:
                     specific_params[client_idx][name] = common_params[name] + spe_params[name]
                     personal_params_dict[client_idx][name] = spe_params[name]
 
-
-        common_params_malicious = self.get_params_based_mask(common_mask, client_params_dict[0])
-        personal_params_malicious = self.get_params_based_mask(specific_mask[0], client_params_dict[0])
-
-        new_params_malicious = {}
-        for name, params in common_params_malicious.items():
-            new_params_malicious[name] = common_params_malicious[name] + personal_params_malicious[name]
-
-        common_grad_malicious = self.get_params_based_mask_to_list(client_topk_mask_dict[0], client_grads_dict[0])
-        common_grad_benign = self.get_params_based_mask_to_list(client_topk_mask_dict[6], client_grads_dict[6])
-
-        common_grad_malicious = torch.cat([grads.view(-1) for name, grads in common_grad_malicious.items()])
-        common_grad_benign = torch.cat([grads.view(-1) for name, grads in common_grad_benign.items()])
-        # common_grad_malicious = common_grad_malicious['conv4.0.weight'].view(-1)
-        # common_grad_benign = common_grad_benign['conv4.0.weight'].view(-1)
-
-        #conv4.0.weight
-
-
-
-        # neurotoxin_mask = {}
-        # updates_dict = common_params
-        # for name in updates_dict:
-        #     updates = updates_dict[name].abs().view(-1)
-        #     gradients_length = torch.numel(updates)
-        #     _, indices = torch.topk(-1 * updates, int(gradients_length * self.args.dense_ratio))
-        #     mask_flat = torch.zeros(gradients_length)
-        #     mask_flat[indices.cpu()] = 1
-        #     neurotoxin_mask[name] = (mask_flat.reshape(updates_dict[name].size()))
-        return specific_params, common_params, avg_global_model, common_params_malicious, new_params_malicious, common_grad_malicious, common_grad_benign
+        return specific_params, common_params
 
     def get_mask(self, client_topk_mask_dict, client_indexes):
         common_mask, specific_mask = {}, {i: {} for i in client_indexes}

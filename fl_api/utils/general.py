@@ -14,6 +14,7 @@ from fl_api.utils.cam import SmoothGradCAMpp
 from fl_api.utils.visualize import reverse_normalize, visualize
 from torchvision.utils import save_image
 import pandas as pd
+from collections import Counter
 
 
 def write_data_to_csv(data, path):
@@ -34,6 +35,186 @@ def  compute_cosine_similarity(tensor0, tensor1):
     tensor1 = tensor1.unsqueeze(0)
 
     return F.cosine_similarity(tensor0, tensor1).item()
+
+def computing_coordinate_repeatability(coordinate_tensor1, coordinate_tensor2):
+    intersection_count = 0
+    union_count = 0
+    for name, mask in coordinate_tensor1.items():
+        counter1 = Counter(coordinate_tensor1[name].cpu().numpy())
+        counter2 = Counter(coordinate_tensor2[name].cpu().numpy())
+
+        intersection = counter1 & counter2  # 取交集
+        union = counter1 | counter2  # 取并集
+
+        intersection_count += sum(intersection.values())  # 计算交集元素的总数
+        union_count += sum(union.values())  # 计算并集元素的总数
+
+    similarity = intersection_count / union_count
+    return similarity
+
+def get_features(model, target_layer, data_loader, device, reduction='flatten', activation=None):
+    '''Function to extract the features/embeddings/activations from a target layer'''
+
+    # extract feature vector from a specific layer
+    # output_ is of shape (num_samples, num_neurons, feature_map_width, feature_map_height), here we choose the max activation
+    if reduction == 'flatten':
+        def feature_hook(module, input_, output_):
+            global feature_vector
+            # access the layer output and convert it to a feature vector
+            feature_vector = output_
+            if activation is not None:
+                feature_vector = activation(feature_vector)
+            feature_vector = torch.flatten(feature_vector, 1)
+            return None
+    elif reduction == 'none':
+        def feature_hook(module, input_, output_):
+            global feature_vector
+            # access the layer output and convert it to a feature vector
+            feature_vector = output_
+            if activation is not None:
+                feature_vector = activation(feature_vector)
+            feature_vector = feature_vector
+            return None
+    elif reduction == 'max':
+        def feature_hook(module, input_, output_):
+            global feature_vector
+            # access the layer output and convert it to a feature vector
+            feature_vector = output_
+            if activation is not None:
+                feature_vector = activation(feature_vector)
+            if feature_vector.dim() > 2:
+                feature_vector = torch.max(
+                    torch.flatten(feature_vector, 2), 2)[0]
+            else:
+                feature_vector = feature_vector
+            return None
+    elif reduction == 'sum':
+        def feature_hook(module, input_, output_):
+            global feature_vector
+            # access the layer output and convert it to a feature vector
+            feature_vector = output_
+            if activation is not None:
+                feature_vector = activation(feature_vector)
+            if feature_vector.dim() > 2:
+                feature_vector = torch.sum(torch.flatten(feature_vector, 2), 2)
+            else:
+                feature_vector = feature_vector
+            return None
+
+    h = target_layer.register_forward_hook(feature_hook)
+
+    model.to(device)
+    model.eval()
+    # collect feature vectors
+    features = []
+    labels = []
+    poi_indicator = []
+
+    with torch.no_grad():
+        for batch_idx, (inputs, targets, *other_info) in enumerate(data_loader):
+            global feature_vector
+            # Fetch features
+            inputs, targets = inputs.to(device), targets.to(device)
+            outputs = model(inputs)
+            # if activation is not None:
+            #     feature_vector = activation(feature_vector)
+            # move all tensor to cpu to save memory
+            current_feature = feature_vector.detach().cpu().numpy()
+            current_labels = targets.cpu().numpy()
+            # current_poi_indicator = np.array(other_info[1].numpy())
+
+            # Store features
+            features.append(current_feature)
+            labels.append(current_labels)
+            # poi_indicator.append(current_poi_indicator)
+
+    features = np.concatenate(features, axis=0)
+    labels = np.concatenate(labels, axis=0)
+    # poi_indicator = np.concatenate(poi_indicator, axis=0)
+    h.remove()  # Rmove the hook
+
+    return features
+
+def visual_neuron_activation(model, w, data_loader_poison, data_loader_clean, device, round_idx):
+    model.load_state_dict(w)
+    model.eval()
+    model.to(device)
+    # print(model)
+    target_layer = model.conv4
+
+    features_bd = get_features(model, target_layer, data_loader_poison, device)
+    features_clean = get_features(model, target_layer, data_loader_clean, device)
+    features_bd_avg = np.mean(features_bd, axis=0)
+    features_clean_avg = np.mean(features_clean, axis=0)
+
+    sort_bar = np.argsort(features_clean_avg)[::-1]
+
+    features_bd_avg = features_bd_avg[sort_bar]
+    features_clean_avg = features_clean_avg[sort_bar]
+
+    plt.figure(figsize=(10, 10))
+    plt.bar(
+        np.arange(features_clean_avg.shape[0]),
+        features_clean_avg,
+        label="Clean",
+        alpha=0.7,
+        color="#2196F3",
+    )
+    plt.bar(
+        np.arange(features_bd_avg.shape[0]),
+        features_bd_avg,
+        label="Poisoned",
+        alpha=0.7,
+        color="#4CAF50",
+    )
+    plt.xlabel("Neuron")
+    plt.ylabel("Average Activation Value")
+    plt.title(f"Round: {round_idx}")
+    plt.xlim(0, features_clean_avg.shape[0])
+    plt.legend()
+    plt.show()
+
+
+def compute_l2norm_feature(w_global, model, data_loader_clean, data_loader_poisoned, device):
+    model.load_state_dict(w_global)
+    model.eval()
+    model.to(device)
+
+    dataiter = iter(data_loader_clean)
+    images, labels = next(dataiter)
+
+    # 从这个batch中获取第一张图片
+    clean_image, clean_label = images[10].to(device), labels[10].to(device)
+    save_image(clean_image, f'logs/cifar10/visualize/feature_l2norm/image-clean.png')
+
+    dataiter = iter(data_loader_poisoned)
+    images, labels = next(dataiter)
+
+    # 从这个batch中获取第一张图片
+    poisoned_image, poisoned_label = images[10].to(device), labels[10].to(device)
+    save_image(poisoned_image, f'logs/cifar10/visualize/feature_l2norm/image-poisoned.png')
+
+    clean_feature = get_layer_feature(model, clean_image)
+    poisoned_feature = get_layer_feature(model, poisoned_image)
+
+    l2_norm = torch.norm(clean_feature-poisoned_feature, p=2)
+    return l2_norm.item()
+
+
+def get_layer_feature(model, input):
+    layer_output = []
+    def get_layer_output(module, input, output):
+        layer_output.append(output)
+
+    layer = model.conv4
+    # layer = model.res2
+    hook = layer.register_forward_hook(get_layer_output)
+    with torch.no_grad():
+        model(input.unsqueeze(0))
+
+    hook.remove()
+    return layer_output[0]
+
 
 def smooth_grad_CAM(model, data_loader, device, name):
     # 从DataLoader中获取第一个batch
@@ -103,6 +284,11 @@ def visual_loss_distribution(clean_losses, poison_losses, title):
             y_poison_1.append(0)
 
     names = [str(i) for i in names]
+
+    # computing the average value of loss distribution
+    clean_loss_avg = sum([a*b for a, b in zip(X_clean, y_clean)])/sum(y_clean)
+    poison_loss_avg = sum([a*b for a, b in zip(X_poison, y_poison)])/sum(y_poison)
+
     # plt.bar(names, [(i / sum(y_clean_1)) * 100 for i in y_clean_1], label='Clean samples')
     # plt.bar(names, [(i / sum(y_clean_1)) * 100 for i in y_poison_1], label='Poisoned samples')
     # plt.xticks(rotation=75)
@@ -111,7 +297,7 @@ def visual_loss_distribution(clean_losses, poison_losses, title):
     # plt.title(title)
     # plt.legend()
     # plt.show()
-    return names, y_clean_1, y_poison_1
+    return names, y_clean_1, y_poison_1, clean_loss_avg, poison_loss_avg
 
 
 def model_clp(model, w_global):
