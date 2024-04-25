@@ -116,7 +116,7 @@ class FedAvgAPI:
                                                                               self.args, round_idx, self.args.n_classes)
         print(f'| Val_Loss/Val_Acc: {val_loss:.3f} / {val_acc:.3f} |')
         print(f'| Val_Per_Class_Acc: {val_per_class_acc} |')
-        print(f'| Val_Loss_samples: {all_losses} |')
+        # print(f'| Val_Loss_samples: {all_losses} |')
         self.acc_vec.append(val_acc)
         self.per_class_vec.append(val_per_class_acc)
 
@@ -125,14 +125,14 @@ class FedAvgAPI:
         self.cum_poison_acc_mean += asr
         self.asr_vec.append(asr)
         print(f'| Attack Loss/Attack Success Ratio: {poison_loss:.3f} / {asr:.3f} |')
-        print(f'| Attack_Loss_samples: {all_losses} |')
+        # print(f'| Attack_Loss_samples: {all_losses} |')
 
         poison_loss, (poison_acc, _), fail_samples, all_losses = self.get_loss_n_accuracy(global_model, self.criterion,
                                                                                 self.poisoned_val_only_x_loader, self.args,
                                                                                round_idx, self.args.n_classes)
         self.pacc_vec.append(poison_acc)
         print(f'| Poison Loss/Poison accuracy: {poison_loss:.3f} / {poison_acc:.3f} |')
-        print(f'| Poison_Loss_samples: {all_losses} |')
+        # print(f'| Poison_Loss_samples: {all_losses} |')
 
         save_frequency = 25
         PATH = "logs/{}/checkpoints/FedAvg_AckRatio{}_{}_data{}_alpha{}_Rnd{}_Epoch{}_inject{}_Agg{}_noniid{}_maskthreshold{}_attack{}_topk{}.pt".format(

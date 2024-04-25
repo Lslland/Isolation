@@ -50,7 +50,7 @@ def add_args(parser):
                         help='momentum')
     parser.add_argument('--batch_size', type=int, default=64, metavar='N',
                         help='local batch size for training')
-    parser.add_argument('--non_iid', action='store_true', default=False)
+    parser.add_argument('--non_iid', action='store_true', default=True)
     parser.add_argument('--alpha', type=float, default=0.5)
     parser.add_argument('--num_workers', type=int, default=0,
                         help="num of workers for multithreading")
@@ -59,7 +59,7 @@ def add_args(parser):
     parser.add_argument('--pattern_type', type=str, default='plus',
                         help="shape of bd pattern")
     parser.add_argument('--attack', type=str, default="badnet")
-    parser.add_argument('--poison_frac', type=float, default=0.5,
+    parser.add_argument('--poison_frac', type=float, default=0,
                         help="fraction of dataset to corrupt for backdoor attack")
     parser.add_argument('--aggr', type=str, default='avg',
                         help="aggregation function to aggregate agents' local weights")
@@ -70,9 +70,9 @@ def add_args(parser):
                         help="num of workers for multithreading")
     parser.add_argument('--method', type=str, default="TopK",
                         help="TopKnoPer, TopK")
-    parser.add_argument('--theta', type=int, default=0.55,
+    parser.add_argument('--theta', type=int, default=0.63,
                         help="the ratio of partition")
-    parser.add_argument('--topk', type=int, default=0.6,
+    parser.add_argument('--topk', type=int, default=0.87,
                         help="the ratio of topk")
     parser.add_argument('--cease_poison', type=float, default=100000)
 
@@ -137,6 +137,10 @@ def custom_model_trainer(args, model, logger):
 
 
 if __name__ == "__main__":
+    # thetas = [0.62, 0.67]
+    # topks = [0.85, 0.87, 0.9]
+    # for theta in thetas:
+    #     for topk in topks:
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = False
     torch.manual_seed(0)
@@ -144,16 +148,11 @@ if __name__ == "__main__":
     np.random.seed(0)
     random.seed(0)
     torch.backends.cudnn.deterministic = True
-
     parser = add_args(argparse.ArgumentParser(description='Isolation'))
     args = parser.parse_args()
-    # thetas = [0.4]
-    # topks = [0.4, 0.5, 0.6, 0.7, 0.8]
-
-    # for theta in thetas:
-    #     for topk in topks:
     # args.theta = theta
     # args.topk = topk
+
     print(args.theta, args.topk)
     print("torch version{}".format(torch.__version__))
     device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
@@ -171,3 +170,5 @@ if __name__ == "__main__":
     mnt_flAPI.train()
     # mnt_flAPI.test(global_model=None, round='Test')
     print("end-time: ", datetime.now())
+
+

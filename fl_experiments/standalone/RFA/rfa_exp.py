@@ -126,31 +126,35 @@ def custom_model_trainer(args, model, logger):
 
 
 if __name__ == "__main__":
-    torch.backends.cudnn.enabled = True
-    torch.backends.cudnn.benchmark = False
-    torch.manual_seed(0)
-    torch.cuda.manual_seed_all(0)
-    np.random.seed(0)
-    random.seed(0)
-    torch.backends.cudnn.deterministic = True
+    poison_frac_list = [0.8, 0.5, 0.2, 0.05, 0]
+    for poison_frac_ in poison_frac_list:
+        torch.backends.cudnn.enabled = True
+        torch.backends.cudnn.benchmark = False
+        torch.manual_seed(0)
+        torch.cuda.manual_seed_all(0)
+        np.random.seed(0)
+        random.seed(0)
+        torch.backends.cudnn.deterministic = True
 
-    parser = add_args(argparse.ArgumentParser(description='Isolation'))
-    args = parser.parse_args()
+        parser = add_args(argparse.ArgumentParser(description='Isolation'))
+        args = parser.parse_args()
+        args.poison_frac = poison_frac_
+        print(args.poison_frac)
 
-    device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
+        device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
 
-    log_path = os.path.join('./logs/', args.dataset)
-    log_name = "RFA_AckRatio{}_{}_method{}_data{}_alpha{}_epoch{}_inject{}_agg{}_nonIID{}_theta{}_attack{}_topk{}".format(
-        args.num_corrupt, args.num_clients, args.method, args.dataset, args.alpha, args.epochs,
-        args.poison_frac, args.aggr, args.non_iid, args.theta, args.attack, args.topk)
-    logger = CompleteLogger(log_path, log_name)
-    args.client_num_per_round = int(args.num_clients * args.frac)
+        log_path = os.path.join('./logs/', args.dataset)
+        log_name = "RFA_AckRatio{}_{}_method{}_data{}_alpha{}_epoch{}_inject{}_agg{}_nonIID{}_theta{}_attack{}_topk{}".format(
+            args.num_corrupt, args.num_clients, args.method, args.dataset, args.alpha, args.epochs,
+            args.poison_frac, args.aggr, args.non_iid, args.theta, args.attack, args.topk)
+        logger = CompleteLogger(log_path, log_name)
+        args.client_num_per_round = int(args.num_clients * args.frac)
 
-    print("torch version{}".format(torch.__version__))
-    dataset = load_data(args)
-    print("start-time: ", datetime.now())
-    print("{}".format(args))
-    mnt_flAPI = RfaAPI(dataset, device, args, logger)
-    mnt_flAPI.train()
-    # mnt_flAPI.test(global_model=None, round='Test')
-    print("end-time: ", datetime.now())
+        print("torch version{}".format(torch.__version__))
+        dataset = load_data(args)
+        print("start-time: ", datetime.now())
+        print("{}".format(args))
+        mnt_flAPI = RfaAPI(dataset, device, args, logger)
+        mnt_flAPI.train()
+        # mnt_flAPI.test(global_model=None, round='Test')
+        print("end-time: ", datetime.now())

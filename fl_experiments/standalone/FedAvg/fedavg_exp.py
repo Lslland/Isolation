@@ -59,7 +59,7 @@ def add_args(parser):
     parser.add_argument('--pattern_type', type=str, default='plus',
                         help="shape of bd pattern")
     parser.add_argument('--attack', type=str, default="badnet")
-    parser.add_argument('--poison_frac', type=float, default=0.5,
+    parser.add_argument('--poison_frac', type=float, default=0.05,
                         help="fraction of dataset to corrupt for backdoor attack")
     parser.add_argument('--aggr', type=str, default='avg',
                         help="aggregation function to aggregate agents' local weights")

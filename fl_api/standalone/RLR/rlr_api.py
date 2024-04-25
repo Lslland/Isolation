@@ -170,7 +170,7 @@ class RLRAPI:
             w_global, malicious_params = aggregator.aggregate_updates(w_global, client_updates_dict)
 
             self.test(w_global, round_idx, title=f'Round: {round_idx} RLR')
-            self.test(malicious_params, round_idx, title=f'Round: {round_idx} Malicious 0')
+            # self.test(malicious_params, round_idx, title=f'Round: {round_idx} Malicious 0')
 
     def test(self, global_model, round_idx, title):
 
