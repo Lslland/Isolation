@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 
 from fl_api.data_preprocessing.data import DatasetSplit, poison_dataset
+from fl_api.utils.general import parameters_to_vector, vector_to_name_param
 
 
 class Client:
@@ -48,6 +49,20 @@ class Client:
 
         mask, client_grads = self.model_trainer.train(self.train_loader, self.device, round_idx, criterion, neurotoxin_mask, self.poison_idxs)
         local_model = self.model_trainer.get_model_params()
+
+        if "scale" in self.args.attack:
+            after_train = parameters_to_vector(
+                [local_model[name] for name in local_model]).detach()
+            before_train = parameters_to_vector(
+                [w[name] for name in w]).detach()
+            after_train, before_train = after_train.to(self.args.gpu), before_train.to(self.args.gpu)
+            update = after_train - before_train
+            # logging.info("scale update for" + self.args.attack.split("_", 1)[1] + " times")
+            if self.client_idx < self.args.num_corrupt:
+                update = int(self.args.attack.split("_", 1)[1]) * update
+                local_model_vec = before_train + update
+                local_model = vector_to_name_param(local_model_vec, copy.deepcopy(w))
+
         return mask, local_model, client_grads
 
     def test(self, w, round):

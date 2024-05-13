@@ -74,7 +74,7 @@ def add_args(parser):
     parser.add_argument('--anneal_factor', type=float, default=0.0001,
                         help="num of workers for multithreading")
     parser.add_argument('--dis_check_gradient', action='store_true', default=False)
-    parser.add_argument('--theta', type=int, default=0.4,
+    parser.add_argument('--theta', type=int, default=20,
                         help="the ratio of partition")
     parser.add_argument('--topk', type=int, default=0.6,
                         help="the ratio of topk")

@@ -24,7 +24,8 @@ class Aggregation():
         cur_global_params = parameters_to_vector(
             [params for name, params in before_train_params.items()]).detach()
         aggregated_updates = self.agg_avg(cur_client_updates_dict)
-        new_global_params_vec = cur_global_params.to(self.device) + aggregated_updates
+
+        new_global_params_vec = (cur_global_params.to(self.device) + aggregated_updates).float()
         new_global_params = vector_to_name_param(new_global_params_vec, before_train_params)
         return new_global_params
 

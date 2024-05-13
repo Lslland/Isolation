@@ -33,7 +33,7 @@ class DatasetSplit(Dataset):
         if runtime_poison and poison_frac > 0:
             self.poison_idxs = random.sample(self.idxs, floor(poison_frac * len(self.idxs)))
             for idx in self.poison_idxs:
-                self.poison_sample[idx] = add_pattern_bd(copy.deepcopy(self.dataset[idx][0]), None, args.data,
+                self.poison_sample[idx] = add_pattern_bd(copy.deepcopy(self.dataset[idx][0]), None, args.dataset,
                                                          pattern_type=args.pattern_type, agent_idx=client_id,
                                                          attack=args.attack)
                 # plt.imshow(self.poison_sample[idx].permute(1, 2, 0))
@@ -266,9 +266,10 @@ def add_pattern_bd(x, y, dataset='cifar10', pattern_type='square', agent_idx=-1,
                 for i in range(row):
                     for j in range(column):
                         x[i][j][d] = max(min(x[i][j][d] + 20 * math.sin((2 * math.pi * j * 6) / column), 255), 0)
-            # import matplotlib.pyplot as plt
-            # # plt.imsave("visualization/input_images/backdoor2.png", x)
+            import matplotlib.pyplot as plt
+            # plt.imsave("visualization/input_images/badnet1.png", x)
             # print(y)
+            # plt.imshow(x)
             # plt.show()
         else:
             if pattern_type == 'plus':
@@ -342,10 +343,11 @@ def add_pattern_bd(x, y, dataset='cifar10', pattern_type='square', agent_idx=-1,
                                 else:
                                     x[start_idx + size // 2, i][d] = 255
 
-                # import matplotlib.pyplot as plt
+                import matplotlib.pyplot as plt
                 #
-                # plt.imsave("visualization/input_images/backdoor2.png", x)
+                # plt.imsave("visualization/input_images/DBA1.png", x)
                 # # print(y)
+                # plt.imshow(x)
                 # plt.show()
 
     elif dataset == 'tinyimagenet':
@@ -457,8 +459,8 @@ def add_pattern_bd(x, y, dataset='cifar10', pattern_type='square', agent_idx=-1,
                     for i in range(start_idx - size // 2, start_idx + size // 2 + 1):
                         x[start_idx + size // 2, i] = 255
     # import matplotlib.pyplot as plt
-    # if agent_idx == -1:
-    #     # plt.imsave("visualization/input_images/backdoor2.png", x)
+    # if agent_idx == 3:
+    #     plt.imsave("visualization/input_images/DBA8.png", x)
     #     plt.imshow(x)
     #     print(y)
     #     plt.show()

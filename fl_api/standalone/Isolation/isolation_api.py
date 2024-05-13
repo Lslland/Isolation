@@ -116,9 +116,9 @@ class IsolationAPI:
                 client_topk_mask_dict[client_id] = copy.deepcopy(topk_mask)
                 client_grads_dict[client_id] = copy.deepcopy(client_grads)
 
-            w_client_round, w_global = aggregator.aggregate_updates(
+            w_client_round, w_global, neurotoxin_mask = aggregator.aggregate_updates(
                 client_topk_mask_dict, client_params_dict, client_indexes, round_idx=round_idx,
-                client_grads_dict=client_grads_dict)
+                client_grads_dict=client_grads_dict, w_per_models=w_per_models)
             # Updating the params of each client
             for idx in w_client_round.keys():
                 w_per_models[idx] = w_client_round[idx]

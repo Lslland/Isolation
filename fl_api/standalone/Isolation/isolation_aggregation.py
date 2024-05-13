@@ -1,4 +1,6 @@
 import copy
+
+import numpy as np
 import torch
 from torch.nn.utils import  parameters_to_vector
 import logging
@@ -19,9 +21,13 @@ class Aggregation():
         self.common_mask = None
         self.specific_mask = None
 
-    def aggregate_updates(self, client_topk_mask_dict, client_params_dict, client_indexes, round_idx, client_grads_dict):
+    def aggregate_updates(self, client_topk_mask_dict, client_params_dict, client_indexes, round_idx, client_grads_dict, w_per_models):
         common_mask, specific_mask = self.get_mask(client_topk_mask_dict, client_indexes)
+        avg_global_model_old = self.avg_client_params(w_per_models, client_indexes)
         avg_global_model = self.avg_client_params(client_params_dict, client_indexes)
+        avg_global_model_old_vec = parameters_to_vector([copy.deepcopy(avg_global_model_old[name]) for name in list(avg_global_model_old.keys())])
+        avg_global_model_vec = parameters_to_vector([copy.deepcopy(avg_global_model[name]) for name in list(avg_global_model.keys())])
+        aggregated_updates = parameters_to_vector(avg_global_model_vec) - parameters_to_vector(avg_global_model_old_vec)
 
         common_params = self.get_params_based_mask(common_mask, avg_global_model)
 
@@ -36,17 +42,30 @@ class Aggregation():
                     specific_params[client_idx][name] = common_params[name] + spe_params[name]
                     personal_params_dict[client_idx][name] = spe_params[name]
 
-        return specific_params, common_params
+        neurotoxin_mask = {}
+        updates_dict = vector_to_name_param(aggregated_updates, copy.deepcopy(avg_global_model))
+        for name in updates_dict:
+            updates = updates_dict[name].abs().view(-1)
+            gradients_length = torch.numel(updates)
+            _, indices = torch.topk(-1 * updates, int(gradients_length * self.args.dense_ratio))
+            mask_flat = torch.zeros(gradients_length)
+            mask_flat[indices.cpu()] = 1
+            neurotoxin_mask[name] = (mask_flat.reshape(updates_dict[name].size()))
+
+        return specific_params, common_params, neurotoxin_mask
 
     def get_mask(self, client_topk_mask_dict, client_indexes):
         common_mask, specific_mask = {}, {i: {} for i in client_indexes}
         for name in client_topk_mask_dict[client_indexes[0]].keys():
             mask_list = [client_topk_mask_dict[k][name] for k in client_topk_mask_dict.keys()]
             concatenated_tensor = torch.cat(mask_list)
-            unique_elements, counts = torch.unique(concatenated_tensor, return_counts=True)
-
+            # unique_elements, counts = torch.unique(concatenated_tensor, return_counts=True)
+            unique_elements, counts = torch.unique(concatenated_tensor.to('cpu'), return_counts=True)
+            unique_elements = unique_elements.to(0)
+            counts = counts.to(0)
             # common_mask[name] = [unique_elements[i] for i in range(len(counts)) if counts[i] != 1]
-            threshold = int(self.args.theta * len(client_indexes))
+            # threshold = int(self.args.theta * len(client_indexes))
+            threshold = self.args.theta
             indices = (counts > threshold).nonzero().squeeze()
             common_mask[name] = unique_elements[indices]
 
@@ -63,7 +82,10 @@ class Aggregation():
         for name, params in params_dict.items():
             params = params.to(self.device)
             new_params[name] = torch.zeros_like(params)
-            new_params[name].flatten()[masks[name]] = params.flatten()[masks[name]]
+            if 'running' in name or 'num_batches_tracked' in name:
+                new_params[name] = params
+            else:
+                new_params[name].flatten()[masks[name]] = params.flatten()[masks[name]]
         return new_params
 
     def get_params_based_mask_to_list(self, masks, params_dict):

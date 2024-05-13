@@ -1,5 +1,6 @@
 import copy
 import math
+import time
 
 import numpy as np
 import os
@@ -96,6 +97,8 @@ class RLRAPI:
 
             print("client_indexes = " + str(client_indexes))
 
+            start = time.time()
+
             for client_id in client_indexes:
                 client = self.client_list[client_id]
                 update, channel_sign_dict, conv_last_weights = client.train(w_global, round_idx, self.criterion)
@@ -170,6 +173,7 @@ class RLRAPI:
             w_global, malicious_params = aggregator.aggregate_updates(w_global, client_updates_dict)
 
             self.test(w_global, round_idx, title=f'Round: {round_idx} RLR')
+            print(time.time()-start)
             # self.test(malicious_params, round_idx, title=f'Round: {round_idx} Malicious 0')
 
     def test(self, global_model, round_idx, title):
@@ -196,7 +200,7 @@ class RLRAPI:
         print(f'| Poison Loss/Poison accuracy: {poison_loss:.3f} / {poison_acc:.3f} |')
 
         save_frequency = 25
-        PATH = "logs/{}/checkpoints/RLR_AckRatio{}_{}_Method{}_data{}_alpha{}_Rnd{}_Epoch{}_inject{}_Agg{}_noniid{}_maskthreshold{}_attack{}.pt".format(
+        PATH = "logs/{}/checkpoints/RLR1_AckRatio{}_{}_Method{}_data{}_alpha{}_Rnd{}_Epoch{}_inject{}_Agg{}_noniid{}_maskthreshold{}_attack{}.pt".format(
             self.args.dataset, self.args.num_corrupt, self.args.num_clients, self.args.method, self.args.dataset,
             self.args.alpha, round_idx, self.args.epochs,
             self.args.poison_frac, self.args.aggr, self.args.non_iid, self.args.theta, self.args.attack)

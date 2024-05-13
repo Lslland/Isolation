@@ -55,9 +55,10 @@ class MyModelTrainer(ModelTrainer):
         for _ in range(self.args.epochs):
             for _, (inputs, labels) in enumerate(train_loader):
                 optimizer.zero_grad()
-                inputs, labels = inputs.to(device=device, non_blocking=True), \
-                    labels.to(device=device, non_blocking=True)
+                inputs, labels = inputs.to(device=device), \
+                    labels.to(device=device)
                 outputs = model(inputs)
+
                 loss = criterion(outputs, labels)
                 loss.backward()
                 for name, param in model.named_parameters():

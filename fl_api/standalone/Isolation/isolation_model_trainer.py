@@ -51,9 +51,9 @@ class MyModelTrainer(ModelTrainer):
                 loss.backward()
                 optimizer.step()
 
-                # if self.args.attack == "neurotoxin" and len(neurotoxin_mask) and self.id < self.args.num_corrupt:
-                #     for name, param in model.named_parameters():
-                #         param.grad.data = neurotoxin_mask[name].to(self.args.device) * param.grad.data
+                if self.args.attack == "neurotoxin" and len(neurotoxin_mask) and self.id < self.args.num_corrupt:
+                    for name, param in model.named_parameters():
+                        param.grad.data = neurotoxin_mask[name].to(device) * param.grad.data
                 # if self.args.attack == "r_neurotoxin" and len(neurotoxin_mask) and self.id < self.args.num_corrupt:
                 #     for name, param in model.named_parameters():
                 #         param.grad.data = (torch.ones_like(neurotoxin_mask[name].to(self.args.device))-neurotoxin_mask[name].to(self.args.device) ) * param.grad.data

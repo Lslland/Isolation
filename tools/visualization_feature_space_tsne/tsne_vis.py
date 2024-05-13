@@ -26,14 +26,16 @@ custom_palette = sns.color_palette("hls", num_class)
 print(custom_palette)
 cm=mpl.colors.ListedColormap([i for i in custom_palette])
 
+
 np.save('res_npy/output_2d_var.npy', output_2d_var, allow_pickle=False)
 plt.rcParams['figure.figsize'] = 10, 10
 plt.scatter(output_2d_var[:, 0], output_2d_var[:, 1], c=var_target, s=60, alpha=0.6, cmap=cm)
+plt.legend(['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship','truck'])
 
 np.save('res_npy/output_2d_poison.npy', output_2d_poison, allow_pickle=False)
 plt.rcParams['figure.figsize'] = 10, 10
 plt.scatter(output_2d_poison[:, 0], output_2d_poison[:, 1], c='black', s=60, alpha=0.6)
-plt.legend()
+# plt.legend(['poisoned'])
 
-plt.savefig('visualization/output_2d_fedavg.png', bbox_inches='tight')
+plt.savefig('visualization/output_2d_isolation.png', bbox_inches='tight')
 plt.show()

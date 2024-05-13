@@ -25,7 +25,7 @@ def add_args(parser):
                         help="network architecture, supporting 'cnn_cifar10', 'MLP_mnist', 'cnn_cifar100', 'resnet18', 'vgg11', 'resnet9, fmnist_CNN'")
     parser.add_argument('--dataset', type=str, default='cifar10', metavar='N',
                         help='dataset used for training, cifar10, cifar100, fmnist, tinyimagenet')
-    parser.add_argument('--n_classes', type=int, default=10, metavar='N',
+    parser.add_argument('--n_classes', type=int, default=200, metavar='N',
                         help='local batch size for training')
     parser.add_argument('--num_clients', type=int, default=40, metavar='N',
                         help='dataset used for training')
@@ -60,8 +60,8 @@ def add_args(parser):
                         help="target class for backdoor attack")
     parser.add_argument('--pattern_type', type=str, default='plus',
                         help="shape of bd pattern")
-    parser.add_argument('--attack',type=str, default="badnet")
-    parser.add_argument('--poison_frac', type=float, default=0,
+    parser.add_argument('--attack',type=str, default="DBA")
+    parser.add_argument('--poison_frac', type=float, default=0.5,
                         help="fraction of dataset to corrupt for backdoor attack")
     parser.add_argument('--aggr', type=str, default='avg',
                         help="aggregation function to aggregate agents' local weights")
@@ -127,7 +127,7 @@ def custom_model_trainer(args, model, logger):
 
 
 if __name__ == "__main__":
-    poison_frac_list = [0.8, 0.2, 0.05, 0]
+    poison_frac_list = [0.5]
     for poison_frac_ in poison_frac_list:
         torch.backends.cudnn.enabled = True
         torch.backends.cudnn.benchmark = False
@@ -145,7 +145,7 @@ if __name__ == "__main__":
         device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
 
         log_path = os.path.join('./logs/', args.dataset)
-        log_name = "RLR_AckRatio{}_{}_method{}_data{}_alpha{}_epoch{}_inject{}_agg{}_nonIID{}_theta{}_attack{}".format(
+        log_name = "RLR1_AckRatio{}_{}_method{}_data{}_alpha{}_epoch{}_inject{}_agg{}_nonIID{}_theta{}_attack{}".format(
                         args.num_corrupt, args.num_clients, args.method, args.dataset, args.alpha, args.epochs,
                         args.poison_frac, args.aggr, args.non_iid, args.theta, args.attack)
         logger = CompleteLogger(log_path, log_name)

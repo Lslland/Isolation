@@ -49,7 +49,6 @@ class LockdownAPI:
         sparsity = calculate_sparsities(self.args, params, distribution=self.args.mask_init)
         mask = init_masks(params, sparsity)
         self.model_trainer.set_init_mask(mask)
-
         for client_idx in range(self.args.num_clients):
             c = Client(client_idx, self.args, self.device, self.model_trainer, self.train_dataset, self.logger,
                        self.user_groups[client_idx], mask=mask)
@@ -112,14 +111,15 @@ class LockdownAPI:
 
             old_mask = [copy.deepcopy(client.mask) for client in self.client_list]
 
+
             for client_id in client_indexes:
                 client = self.client_list[client_id]
-                update, client_params = client.train(w_global, round_idx, self.criterion, global_mask=global_mask,
+                update, client_params = client.train(copy.deepcopy(w_global), round_idx, self.criterion, global_mask=global_mask,
                                                      neurotoxin_mask=neurotoxin_mask)
-                client_params_dict[client_id] = client_params
-                client_updates_dict[client_id] = update
+                client_params_dict[client_id] = copy.deepcopy(client_params)
+                client_updates_dict[client_id] = copy.deepcopy(update)
 
-            w_global = aggregator.aggregate_updates(client_updates_dict, client_indexes, before_train_params=w_global)
+            w_global = aggregator.aggregate_updates(client_updates_dict, client_indexes, before_train_params=copy.deepcopy(w_global))
 
             self.test(w_global, round_idx, old_mask, self.client_list)
 
@@ -153,8 +153,9 @@ class LockdownAPI:
             mask = 0
             for id, agent in enumerate(clients):
                 mask += old_mask[id][name].to(self.device)
+            # print(mask)
             param.data = torch.where(mask.to(self.device) >= self.args.theta, param, torch.zeros_like(param))
-            # print(torch.sum(mask.to(self.device) >= self.args.theta) / torch.numel(mask))
+            # print(torch.sum(mask.to(self.device) >= self.args.theta), torch.numel(mask))
 
         val_loss, (val_acc, val_per_class_acc), _ = self.get_loss_n_accuracy(test_model, self.criterion,
                                                                              self.val_loader,
@@ -164,9 +165,7 @@ class LockdownAPI:
         self.acc_vec.append(val_acc)
         self.per_class_vec.append(val_per_class_acc)
 
-        poison_loss, (asr, _), fail_samples = self.get_loss_n_accuracy(test_model, self.criterion,
-                                                                       self.poisoned_val_loader, self.args, round_idx,
-                                                                       self.args.n_classes)
+        poison_loss, (asr, _), fail_samples = self.get_loss_n_accuracy(test_model, self.criterion,self.poisoned_val_loader)
         self.cum_poison_acc_mean += asr
         self.asr_vec.append(asr)
         print(f'| Clean Attack Loss/Attack Success Ratio: {poison_loss:.3f} / {asr:.3f} |')

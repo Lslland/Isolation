@@ -50,7 +50,7 @@ def add_args(parser):
                         help='momentum')
     parser.add_argument('--batch_size', type=int, default=64, metavar='N',
                         help='local batch size for training')
-    parser.add_argument('--non_iid', action='store_true', default=True)
+    parser.add_argument('--non_iid', action='store_true', default=False)
     parser.add_argument('--alpha', type=float, default=0.5)
     parser.add_argument('--num_workers', type=int, default=0,
                         help="num of workers for multithreading")
@@ -58,8 +58,8 @@ def add_args(parser):
                         help="target class for backdoor attack")
     parser.add_argument('--pattern_type', type=str, default='plus',
                         help="shape of bd pattern")
-    parser.add_argument('--attack', type=str, default="badnet")
-    parser.add_argument('--poison_frac', type=float, default=0,
+    parser.add_argument('--attack', type=str, default="neurotoxin")
+    parser.add_argument('--poison_frac', type=float, default=0.5,
                         help="fraction of dataset to corrupt for backdoor attack")
     parser.add_argument('--aggr', type=str, default='avg',
                         help="aggregation function to aggregate agents' local weights")
@@ -70,10 +70,10 @@ def add_args(parser):
                         help="num of workers for multithreading")
     parser.add_argument('--method', type=str, default="TopK",
                         help="TopKnoPer, TopK")
-    parser.add_argument('--theta', type=int, default=0.63,
-                        help="the ratio of partition")
-    parser.add_argument('--topk', type=int, default=0.87,
-                        help="the ratio of topk")
+    parser.add_argument('--theta', type=int, default=20,
+                        help="0.63, 0.5, 23")
+    parser.add_argument('--topk', type=int, default=0.6,
+                        help="0.87, 0.6, 0.77")
     parser.add_argument('--cease_poison', type=float, default=100000)
 
     parser.add_argument('--loss_distribution', action='store_true', default=False)
@@ -137,38 +137,36 @@ def custom_model_trainer(args, model, logger):
 
 
 if __name__ == "__main__":
-    # thetas = [0.62, 0.67]
-    # topks = [0.85, 0.87, 0.9]
-    # for theta in thetas:
-    #     for topk in topks:
-    torch.backends.cudnn.enabled = True
-    torch.backends.cudnn.benchmark = False
-    torch.manual_seed(0)
-    torch.cuda.manual_seed_all(0)
-    np.random.seed(0)
-    random.seed(0)
-    torch.backends.cudnn.deterministic = True
-    parser = add_args(argparse.ArgumentParser(description='Isolation'))
-    args = parser.parse_args()
-    # args.theta = theta
-    # args.topk = topk
+    poison_frac_list = [0.5]
+    for poison_frac_ in poison_frac_list:
+        torch.backends.cudnn.enabled = True
+        torch.backends.cudnn.benchmark = False
+        torch.manual_seed(0)
+        torch.cuda.manual_seed_all(0)
+        np.random.seed(0)
+        random.seed(0)
+        torch.backends.cudnn.deterministic = True
+        parser = add_args(argparse.ArgumentParser(description='Isolation'))
+        args = parser.parse_args()
+        args.poison_frac = poison_frac_
+        print(args.poison_frac)
 
-    print(args.theta, args.topk)
-    print("torch version{}".format(torch.__version__))
-    device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
+        print(args.theta, args.topk)
+        print("torch version{}".format(torch.__version__))
+        device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
 
-    log_path = os.path.join('./logs/', args.dataset)
-    log_name = "Isolation_AckRatio{}_{}_method{}_data{}_alpha{}_epoch{}_inject{}_agg{}_nonIID{}_theta{}_attack{}_topk{}".format(
-        args.num_corrupt, args.num_clients, args.method, args.dataset, args.alpha, args.epochs,
-        args.poison_frac, args.aggr, args.non_iid, args.theta, args.attack, args.topk)
-    logger = CompleteLogger(log_path, log_name)
-    args.client_num_per_round = int(args.num_clients * args.frac)
+        log_path = os.path.join('./logs/', args.dataset)
+        log_name = "Isolation_AckRatio{}_{}_method{}_data{}_alpha{}_epoch{}_inject{}_agg{}_nonIID{}_theta{}_attack{}_topk{}".format(
+            args.num_corrupt, args.num_clients, args.method, args.dataset, args.alpha, args.epochs,
+            args.poison_frac, args.aggr, args.non_iid, args.theta, args.attack, args.topk)
+        logger = CompleteLogger(log_path, log_name)
+        args.client_num_per_round = int(args.num_clients * args.frac)
 
-    dataset = load_data(args)
-    print("start-time: ", datetime.now())
-    mnt_flAPI = IsolationAPI(dataset, device, args, logger)
-    mnt_flAPI.train()
-    # mnt_flAPI.test(global_model=None, round='Test')
-    print("end-time: ", datetime.now())
+        dataset = load_data(args)
+        print("start-time: ", datetime.now())
+        mnt_flAPI = IsolationAPI(dataset, device, args, logger)
+        mnt_flAPI.train()
+        # mnt_flAPI.test(global_model=None, round='Test')
+        print("end-time: ", datetime.now())
 
 
