@@ -22,7 +22,7 @@ def add_args(parser):
     parser : argparse.ArgumentParser
     return a parser added with args required by fit
     """
-    parser.add_argument('--model', type=str, default='resnet9', metavar='N',
+    parser.add_argument('--model', type=str, default='resnet34', metavar='N',
                         help="network architecture, supporting 'CNN_cifar10', 'MLP_mnist', 'CNN_fmnist'"
                              ", 'vgg11', 'vgg16', 'resnet9', 'resnet18', 'resnet34'")
     parser.add_argument('--dataset', type=str, default='cifar10', metavar='N',
@@ -58,7 +58,7 @@ def add_args(parser):
                         help="target class for backdoor attack")
     parser.add_argument('--pattern_type', type=str, default='plus',
                         help="shape of bd pattern")
-    parser.add_argument('--attack', type=str, default="neurotoxin")
+    parser.add_argument('--attack', type=str, default="badnet")
     parser.add_argument('--poison_frac', type=float, default=0.5,
                         help="fraction of dataset to corrupt for backdoor attack")
     parser.add_argument('--aggr', type=str, default='avg',
@@ -156,8 +156,8 @@ if __name__ == "__main__":
         device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
 
         log_path = os.path.join('./logs/', args.dataset)
-        log_name = "Isolation_AckRatio{}_{}_method{}_data{}_alpha{}_epoch{}_inject{}_agg{}_nonIID{}_theta{}_attack{}_topk{}".format(
-            args.num_corrupt, args.num_clients, args.method, args.dataset, args.alpha, args.epochs,
+        log_name = "Isolation_{}_AckRatio{}_{}_method{}_data{}_alpha{}_epoch{}_inject{}_agg{}_nonIID{}_theta{}_attack{}_topk{}".format(
+            args.model, args.num_corrupt, args.num_clients, args.method, args.dataset, args.alpha, args.epochs,
             args.poison_frac, args.aggr, args.non_iid, args.theta, args.attack, args.topk)
         logger = CompleteLogger(log_path, log_name)
         args.client_num_per_round = int(args.num_clients * args.frac)

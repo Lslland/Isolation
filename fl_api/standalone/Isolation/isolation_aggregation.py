@@ -59,10 +59,10 @@ class Aggregation():
         for name in client_topk_mask_dict[client_indexes[0]].keys():
             mask_list = [client_topk_mask_dict[k][name] for k in client_topk_mask_dict.keys()]
             concatenated_tensor = torch.cat(mask_list)
-            # unique_elements, counts = torch.unique(concatenated_tensor, return_counts=True)
-            unique_elements, counts = torch.unique(concatenated_tensor.to('cpu'), return_counts=True)
-            unique_elements = unique_elements.to(0)
-            counts = counts.to(0)
+            unique_elements, counts = torch.unique(concatenated_tensor, return_counts=True)
+            # unique_elements, counts = torch.unique(concatenated_tensor.to('cpu'), return_counts=True) # if dataset is fasionmnist
+            # unique_elements = unique_elements.to(0)
+            # counts = counts.to(0)
             # common_mask[name] = [unique_elements[i] for i in range(len(counts)) if counts[i] != 1]
             # threshold = int(self.args.theta * len(client_indexes))
             threshold = self.args.theta

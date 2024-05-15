@@ -89,11 +89,7 @@ class RLRAPI:
             Instead of changing the 'Client' instances, our implementation keeps the 'Client' instances and then updates their local dataset 
             """
             client_updates_dict = {}
-            client_sign_dict = {}
-            client_clp_dict = {}
             client_indexes = self._client_sampling(self.args.num_clients)
-            client_conv_last_weights = {}
-            # client_indexes = np.sort(client_indexes)
 
             print("client_indexes = " + str(client_indexes))
 
@@ -102,71 +98,9 @@ class RLRAPI:
             for client_id in client_indexes:
                 client = self.client_list[client_id]
                 update, channel_sign_dict, conv_last_weights = client.train(w_global, round_idx, self.criterion)
-                # client_clp_dict[list(channel_sign_dict.keys())[0]] = list(channel_sign_dict.values())[0]
-                # client_conv_last_weights[list(conv_last_weights.keys())[0]] = list(conv_last_weights.values())[0]
-                # client_sign_dict[list(channel_sign_dict.keys())[0]] = list(channel_sign_dict.values())[0]
                 client_updates_dict[client_id] = update
 
-        #  computing sign -- start
-            # poison_keys = [key for key in client_sign_dict.keys() if 'poison' in key]
-            # benign_keys = [key for key in client_sign_dict.keys() if 'benign' in key]
-            #
-            # poison_value = client_sign_dict[poison_keys[0]]
-            # benign_value = client_sign_dict[benign_keys[0]]
-            #
-            # X = [i for i in range(len(poison_value))]
-            # plt.bar(X, poison_value)
-            # plt.bar(X, benign_value)
-            # plt.title(f'round {round_idx}')
-            # plt.ylabel('the number of sign')
-            # plt.xlabel('the index of channel')
-            # plt.show()
-        #  computing sign -- end
 
-        #  computing clp -- start
-        #     poison_keys = [key for key in client_clp_dict.keys() if 'poison' in key]
-        #     benign_keys = [key for key in client_clp_dict.keys() if 'benign' in key]
-        #
-        #     X_poison, y_poison = list(client_clp_dict[poison_keys[0]].keys()), list(client_clp_dict[poison_keys[0]].values())
-        #     X_benign, y_benign = list(client_clp_dict[benign_keys[0]].keys()), list(client_clp_dict[benign_keys[0]].values())
-        #
-        #
-        #     names = sorted(list(set(X_poison) | set(X_benign)))
-        #     y_poison_1 = []
-        #     y_benign_1 = []
-        #     for name in names:
-        #         if name in X_poison:
-        #             ind = X_poison.index(name)
-        #             y_poison_1.append(y_poison[ind])
-        #         else:
-        #             y_poison_1.append(0)
-        #         if name in X_benign:
-        #             ind = X_benign.index(name)
-        #             y_benign_1.append(y_benign[ind])
-        #         else:
-        #             y_benign_1.append(0)
-        #
-        #     X = [str(name) for name in names]
-        #     plt.bar(X, y_poison_1, label='Poison')
-        #     plt.bar(X, y_benign_1, label='Benign')
-        #     plt.xticks(rotation=75)
-        #     plt.ylabel('# of channels')
-        #     plt.legend()
-        #     # plt.xlabel('Chanel Lipschitzness')
-        #     plt.show()
-        #  computing clp -- end
-
-        # cosine similarity --start
-        #     poison_keys = [key for key in client_conv_last_weights.keys() if 'poison' in key]
-        #     benign_keys = [key for key in client_conv_last_weights.keys() if 'benign' in key]
-        #
-        #     poison_weight = torch.flatten(client_conv_last_weights[poison_keys[0]])
-        #     benign_weight = torch.flatten(client_conv_last_weights[benign_keys[0]])
-        #
-        #     cosine_sim = F.cosine_similarity(poison_weight.unsqueeze(0), benign_weight.unsqueeze(0))
-        #     print(cosine_sim)
-
-        # cosine similarity --end
 
 
             # Aggregation

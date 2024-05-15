@@ -164,8 +164,8 @@ class IsolationAPI:
         print(f'| Poison Loss/Poison accuracy: {poison_loss:.3f} / {poison_acc:.3f} |')
 
         save_frequency = 25
-        PATH = "logs/{}/checkpoints/Isolation_AckRatio{}_{}_Method{}_data{}_alpha{}_Rnd{}_Epoch{}_inject{}_Agg{}_noniid{}_maskthreshold{}_attack{}_topk{}.pt".format(
-            self.args.dataset, self.args.num_corrupt, self.args.num_clients, self.args.method, self.args.dataset,
+        PATH = "logs/{}/checkpoints/Isolation_{}_AckRatio{}_{}_Method{}_data{}_alpha{}_Rnd{}_Epoch{}_inject{}_Agg{}_noniid{}_maskthreshold{}_attack{}_topk{}.pt".format(
+            self.args.dataset, self.args.model, self.args.num_corrupt, self.args.num_clients, self.args.method, self.args.dataset,
             self.args.alpha, round_idx, self.args.epochs,
             self.args.poison_frac, self.args.aggr, self.args.non_iid, self.args.theta, self.args.attack, self.args.topk)
         if round_idx % save_frequency == 0:

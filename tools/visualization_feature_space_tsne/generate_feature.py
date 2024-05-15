@@ -134,7 +134,7 @@ if __name__ == '__main__':
     train_dataset, poisoned_val_loader, poisoned_val_only_x_loader, user_groups, val_loader = load_data(args)
 
     model = ResNet9()
-    model_path = '/home/lgz/papers/federated_learning_20231222/codes/Isolation/fl_experiments/standalone/Isolation/logs/cifar10/checkpoints/Isolation_AckRatio4_40_MethodTopK_datacifar10_alpha0.5_Rnd200_Epoch2_inject0.5_Aggavg_noniidFalse_maskthreshold0.5_attackbadnet_topk0.6.pt'
+    model_path = '/home/lgz/papers/federated_learning_20231222/codes/Isolation/fl_experiments/standalone/Isolation/logs/cifar10/checkpoints/Isolation_AckRatio4_40_MethodTopK_datacifar10_alpha0.5_Rnd200_Epoch2_inject0.5_Aggavg_noniidTrue_maskthreshold23_attackbadnet_topk0.77.pt'
     # model_path = '/home/lgz/papers/federated_learning_20231222/codes/Isolation/fl_experiments/standalone/Isolation/logs/cifar10/checkpoints/Isolation_AckRatio4_40_MethodTopK_datacifar10_alpha0.5_Rnd200_Epoch2_inject0_Aggavg_noniidFalse_maskthreshold0.5_attackbadnet_topk0.6.pt'
     model_path = os.path.join(model_path)
     model.load_state_dict(torch.load(model_path)['model_state_dict'])
@@ -148,9 +148,9 @@ if __name__ == '__main__':
         out_target = []
         out_data = []
         out_output = []
-        for data, target in poisoned_val_loader:
+        for data, target in val_loader:
             cnt += len(data)
-            print("processing: %d/%d" % (cnt, len(poisoned_val_loader.dataset)))
+            print("processing: %d/%d" % (cnt, len(val_loader.dataset)))
             data, target = data.to(0), target.to(0)
             data, target = Variable(data, volatile=True), Variable(target)
             output = model(data)
@@ -166,9 +166,9 @@ if __name__ == '__main__':
         target_array = np.concatenate(out_target, axis=0)
         data_array = np.concatenate(out_data, axis=0)
 
-        np.save('./res_npy/poison_output.npy', output_array, allow_pickle=False)
-        np.save('./res_npy/poison_target.npy', target_array, allow_pickle=False)
-        np.save('./res_npy/poison_data.npy', data_array, allow_pickle=False)
+        np.save('./res_npy/var_output.npy', output_array, allow_pickle=False)
+        np.save('./res_npy/var_target.npy', target_array, allow_pickle=False)
+        np.save('./res_npy/var_data.npy', data_array, allow_pickle=False)
 
 
     generate_feature()
